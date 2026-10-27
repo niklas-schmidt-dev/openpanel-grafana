@@ -1,0 +1,5 @@
+.git
+.env
+.local/*
+!.local/provisioned
+node_modules

@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: OpenPanel
+    folder: OpenPanel
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/opg-dashboards

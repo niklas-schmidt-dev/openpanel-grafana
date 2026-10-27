@@ -1,0 +1,20 @@
+{
+  "name": "openpanel-grafana",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@12.15.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "test": "node --test test/*.test.mjs",
+    "demo:setup": "node scripts/setup.mjs",
+    "demo:up": "node scripts/compose.mjs up --build -d --wait --wait-timeout 300",
+    "demo:down": "node scripts/compose.mjs down",
+    "demo:ports": "node scripts/compose.mjs ps",
+    "test:integration": "node test/integration.mjs",
+    "schema:check": "node scripts/doctor.mjs",
+    "dev": "portless run --name opg node scripts/proxy.mjs"
+  }
+}

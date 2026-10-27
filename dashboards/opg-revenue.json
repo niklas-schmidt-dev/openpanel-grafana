@@ -1,0 +1,354 @@
+{
+  "id": null,
+  "uid": "opg-revenue",
+  "title": "OpenPanel · Revenue",
+  "description": "Gross recorded revenue, before refunds, taxes, fees or FX. OpenPanel v2 stores nonnegative integer minor units. Include a currency property with every revenue event. A backend must deduplicate payment webhooks before sending.",
+  "tags": [
+    "openpanel",
+    "analytics",
+    "opg"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Gross revenue · minor units",
+      "description": "EUR/USD cents; JPY yen. Kept in minor units to avoid incorrect currency-decimal assumptions.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT sum(revenue) AS GrossMinorUnits FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'revenue' AND if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) = ${currency:singlequote}",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Recorded payment events",
+      "description": "Not guaranteed unique orders. Event IDs and order IDs are not a payment ledger.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT count() AS PaymentEvents FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'revenue' AND if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) = ${currency:singlequote}",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Gross revenue over time · minor units",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(created_at) AS time, sum(revenue) AS GrossMinorUnits FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'revenue' AND if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) = ${currency:singlequote} GROUP BY time ORDER BY time",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Revenue by project · minor units",
+      "description": "",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT project_id AS Project, sum(revenue) AS GrossMinorUnits, count() AS PaymentEvents FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'revenue' AND if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) = ${currency:singlequote} GROUP BY Project ORDER BY GrossMinorUnits DESC",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 5,
+      "title": "Currency coverage",
+      "description": "Amounts are grouped by currency and must not be added across rows. UNSPECIFIED needs instrumentation fixes.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) AS Currency, count() AS PaymentEvents, sum(revenue) AS GrossMinorUnits FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'revenue' GROUP BY Currency ORDER BY PaymentEvents DESC",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ],
+  "__inputs": [
+    {
+      "name": "DS_CLICKHOUSE",
+      "label": "OpenPanel ClickHouse",
+      "type": "datasource",
+      "pluginId": "grafana-clickhouse-datasource",
+      "pluginName": "ClickHouse"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "12.3.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "4.23.2"
+    }
+  ],
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "opg"
+      ],
+      "title": "OpenPanel dashboards",
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "database",
+        "label": "Database",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "definition": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "current": {
+          "text": "openpanel",
+          "value": "openpanel"
+        },
+        "options": []
+      },
+      {
+        "name": "project",
+        "label": "Project ID",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "definition": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "current": {
+          "text": "$__all",
+          "value": "$__all"
+        },
+        "options": [],
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "currency",
+        "label": "Currency",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) AS currency FROM `${database:raw}`.events WHERE name = 'revenue' AND $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY currency",
+        "definition": "SELECT DISTINCT if(empty(properties['currency']), 'UNSPECIFIED', upper(properties['currency'])) AS currency FROM `${database:raw}`.events WHERE name = 'revenue' AND $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY currency",
+        "current": {
+          "text": "EUR",
+          "value": "EUR"
+        },
+        "options": []
+      }
+    ]
+  }
+}

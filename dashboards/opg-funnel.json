@@ -1,0 +1,241 @@
+{
+  "id": null,
+  "uid": "opg-funnel",
+  "title": "OpenPanel · Funnel",
+  "description": "Three ordered events within 30 minutes, grouped by project and nonempty session ID. All steps must be inside the selected time range. Server events without a linked session are excluded.",
+  "tags": [
+    "openpanel",
+    "analytics",
+    "opg"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Ordered session funnel",
+      "description": "Strictly increasing timestamps. Simultaneous events do not establish order.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT tupleElement(step, 1) AS Step, tupleElement(step, 2) AS Event, tupleElement(step, 3) AS Sessions FROM (SELECT arrayJoin([('1', ${step1:singlequote}, countIf(level >= 1)), ('2', ${step2:singlequote}, countIf(level >= 2)), ('3', ${step3:singlequote}, countIf(level >= 3))]) AS step FROM (SELECT project_id, session_id, windowFunnel(1800000, 'strict_increase')(toUInt64(toUnixTimestamp64Milli(created_at)), name = ${step1:singlequote}, name = ${step2:singlequote}, name = ${step3:singlequote}) AS level FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND session_id != '' GROUP BY project_id, session_id)) ORDER BY Step",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 2,
+      "title": "Step 1 → Step 3",
+      "description": "",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT 100.0 * countIf(level >= 3) / nullIf(countIf(level >= 1), 0) AS Conversion FROM (SELECT project_id, session_id, windowFunnel(1800000, 'strict_increase')(toUInt64(toUnixTimestamp64Milli(created_at)), name = ${step1:singlequote}, name = ${step2:singlequote}, name = ${step3:singlequote}) AS level FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND session_id != '' GROUP BY project_id, session_id)",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    }
+  ],
+  "__inputs": [
+    {
+      "name": "DS_CLICKHOUSE",
+      "label": "OpenPanel ClickHouse",
+      "type": "datasource",
+      "pluginId": "grafana-clickhouse-datasource",
+      "pluginName": "ClickHouse"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "12.3.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "4.23.2"
+    }
+  ],
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "opg"
+      ],
+      "title": "OpenPanel dashboards",
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "database",
+        "label": "Database",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "definition": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "current": {
+          "text": "openpanel",
+          "value": "openpanel"
+        },
+        "options": []
+      },
+      {
+        "name": "project",
+        "label": "Project ID",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "definition": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "current": {
+          "text": "$__all",
+          "value": "$__all"
+        },
+        "options": [],
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "step1",
+        "label": "Step 1",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "definition": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "current": {
+          "text": "screen_view",
+          "value": "screen_view"
+        },
+        "options": []
+      },
+      {
+        "name": "step2",
+        "label": "Step 2",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "definition": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "current": {
+          "text": "signup",
+          "value": "signup"
+        },
+        "options": []
+      },
+      {
+        "name": "step3",
+        "label": "Step 3",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "definition": "SELECT DISTINCT name FROM `${database:raw}`.events WHERE $__conditionalAll(project_id IN (${project:singlequote}), $project) ORDER BY name",
+        "current": {
+          "text": "revenue",
+          "value": "revenue"
+        },
+        "options": []
+      }
+    ]
+  }
+}

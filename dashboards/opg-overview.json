@@ -1,0 +1,523 @@
+{
+  "id": null,
+  "uid": "opg-overview",
+  "title": "OpenPanel · Overview",
+  "description": "Pageviews and observed identities from events; signed session aggregates from OpenPanel 2.3.0. Project IDs are namespaced, so separate projects never share identities.",
+  "tags": [
+    "openpanel",
+    "analytics",
+    "opg"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": true,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Pageviews",
+      "description": "",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT count() AS Pageviews FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Observed visitors",
+      "description": "Distinct project/profile pairs with a pageview. Anonymous identities may rotate; identifying a user can change IDs. This is not a count of people across devices.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT uniqExactIf(tuple(project_id, profile_id), profile_id != '') AS Visitors FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view'",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Sessions started",
+      "description": "",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT sum(sign) AS Sessions FROM `${database:raw}`.sessions WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project)",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Bounce rate",
+      "description": "OpenPanel session bounce flag; live sessions can still change.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT 100.0 * sum(toInt64(is_bounce) * sign) / nullIf(sum(sign), 0) AS BounceRate FROM `${database:raw}`.sessions WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project)",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Pageviews over time",
+      "description": "",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT $__timeInterval_ms(created_at) AS time, count() AS Pageviews FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view' GROUP BY time ORDER BY time",
+          "format": 0
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Projects",
+      "description": "",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT project_id AS Project, count() AS Pageviews, uniqExactIf(profile_id, profile_id != '') AS Visitors FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view' GROUP BY Project ORDER BY Pageviews DESC",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 7,
+      "title": "Pages",
+      "description": "",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT origin AS Site, path AS Path, count() AS Pageviews FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view' GROUP BY Site, Path ORDER BY Pageviews DESC LIMIT 50",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 8,
+      "title": "Countries",
+      "description": "",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT country AS Country, count() AS Pageviews FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view' GROUP BY Country ORDER BY Pageviews DESC LIMIT 30",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 9,
+      "title": "Devices",
+      "description": "",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${DS_CLICKHOUSE}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${DS_CLICKHOUSE}"
+          },
+          "queryType": "sql",
+          "editorType": "sql",
+          "rawSql": "SELECT device AS Device, browser AS Browser, count() AS Pageviews FROM `${database:raw}`.events WHERE $__timeFilter_ms(created_at) AND $__conditionalAll(project_id IN (${project:singlequote}), $project) AND name = 'screen_view' GROUP BY Device, Browser ORDER BY Pageviews DESC LIMIT 30",
+          "format": 1
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ],
+  "__inputs": [
+    {
+      "name": "DS_CLICKHOUSE",
+      "label": "OpenPanel ClickHouse",
+      "type": "datasource",
+      "pluginId": "grafana-clickhouse-datasource",
+      "pluginName": "ClickHouse"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "12.3.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-clickhouse-datasource",
+      "name": "ClickHouse",
+      "version": "4.23.2"
+    }
+  ],
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "opg"
+      ],
+      "title": "OpenPanel dashboards",
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "database",
+        "label": "Database",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "definition": "SELECT database FROM system.tables WHERE name IN ('events', 'sessions') AND match(database, '^[A-Za-z_][A-Za-z0-9_]*$') GROUP BY database HAVING countDistinct(name) = 2 ORDER BY database",
+        "current": {
+          "text": "openpanel",
+          "value": "openpanel"
+        },
+        "options": []
+      },
+      {
+        "name": "project",
+        "label": "Project ID",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "${DS_CLICKHOUSE}"
+        },
+        "refresh": 1,
+        "query": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "definition": "SELECT DISTINCT project_id FROM `${database:raw}`.events ORDER BY project_id",
+        "current": {
+          "text": "$__all",
+          "value": "$__all"
+        },
+        "options": [],
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  }
+}

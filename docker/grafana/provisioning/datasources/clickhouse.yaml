@@ -1,0 +1,16 @@
+apiVersion: 1
+datasources:
+  - name: OpenPanel ClickHouse
+    uid: opg-clickhouse
+    type: grafana-clickhouse-datasource
+    access: proxy
+    jsonData:
+      host: clickhouse
+      port: 8123
+      protocol: http
+      username: grafana_ro
+      defaultDatabase: openpanel
+      tlsSkipVerify: false
+    secureJsonData:
+      password: $GRAFANA_CH_PASSWORD
+    editable: false

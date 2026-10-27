@@ -1,0 +1,37 @@
+{
+  "info": {
+    "name": "OpenPanel ingestion smoke checks",
+    "description": "Run only against an isolated demo. baseUrl is the API root (including /api when behind the OpenPanel proxy). clientId is a public write-client ID whose project allows https://demo.example. No real client secret is needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key":"baseUrl","value":"http://localhost"},
+    {"key":"clientId","value":"REPLACE_WITH_DEMO_CLIENT_ID"}
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {"method":"GET","url":"{{baseUrl}}/healthcheck"},
+      "event": [{"listen":"test","script":{"exec":["pm.test('healthy', () => pm.response.to.have.status(200));"]}}]
+    },
+    {
+      "name": "Missing client is rejected",
+      "request": {"method":"POST","url":"{{baseUrl}}/track","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"type\":\"track\",\"payload\":{\"name\":\"signup\"}}"}},
+      "event": [{"listen":"test","script":{"exec":["pm.test('requires client ID', () => pm.response.to.have.status(401));"]}}]
+    },
+    {
+      "name": "Accept a browser event",
+      "request": {
+        "method":"POST","url":"{{baseUrl}}/track",
+        "header":[
+          {"key":"Content-Type","value":"application/json"},
+          {"key":"openpanel-client-id","value":"{{clientId}}"},
+          {"key":"Origin","value":"https://demo.example"},
+          {"key":"User-Agent","value":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36"}
+        ],
+        "body":{"mode":"raw","raw":"{\"type\":\"track\",\"payload\":{\"name\":\"screen_view\",\"properties\":{\"__path\":\"https://demo.example/postman\",\"test_run\":\"{{$guid}}\"}}}"}
+      },
+      "event": [{"listen":"test","script":{"exec":["pm.test('accepted', () => pm.response.to.have.status(200));","pm.test('returns visitor identity', () => pm.expect(pm.response.json().deviceId).to.be.a('string').and.not.empty);"]}}]
+    }
+  ]
+}

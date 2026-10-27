@@ -1,0 +1,31 @@
+name: Check dashboards
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm generate && git diff --exit-code -- dashboards
+  integration:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm demo:setup && pnpm demo:up
+      - run: pnpm test:integration && pnpm schema:check --demo
+      - if: always()
+        run: pnpm demo:down

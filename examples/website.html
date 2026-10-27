@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenPanel tracking example</title>
+  <!-- Replace the API URL/client ID and configure this site's exact origin in OpenPanel. -->
+  <script>
+    window.op = window.op || function () { (window.op.q = window.op.q || []).push(arguments); };
+    window.op('init', {
+      apiUrl: 'https://analytics.example.com/api',
+      clientId: 'YOUR_PUBLIC_CLIENT_ID',
+      trackScreenViews: true,
+      trackOutgoingLinks: false,
+      trackAttributes: false
+    });
+  </script>
+  <script defer src="https://openpanel.dev/op1.js"></script>
+</head>
+<body>
+  <button id="signup" type="button">Track a demo signup</button>
+  <script>
+    document.querySelector('#signup').addEventListener('click', () => {
+      window.op('track', 'signup', { plan: 'free' });
+    });
+  </script>
+</body>
+</html>
