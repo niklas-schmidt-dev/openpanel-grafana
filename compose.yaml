@@ -11,6 +11,7 @@ x-app-env: &app-env
   ENCRYPTION_KEY: ${ENCRYPTION_KEY}
   API_URL: ${API_URL}
   DASHBOARD_URL: ${DASHBOARD_URL}
+  CUSTOM_COOKIE_DOMAIN: ${CUSTOM_COOKIE_DOMAIN:-}
   BATCH_SIZE: '100'
   BATCH_INTERVAL: '1000'
   CONCURRENCY: '2'
@@ -104,7 +105,9 @@ services:
     build:
       context: .
       dockerfile: docker/openpanel-dashboard/Dockerfile
-    environment: *app-env
+    environment:
+      <<: *app-env
+      API_URL_SSR: http://api:3000
     depends_on:
       api: {condition: service_healthy}
     ports: ['127.0.0.1::3000']

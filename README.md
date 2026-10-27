@@ -77,7 +77,7 @@ make every tracking configuration anonymous or consent-free.
 
 Requirements: Node 22+, pnpm, Docker Compose v2, and about 6 GB free RAM for
 the full temporary stack. It starts OpenPanel API/dashboard/worker, PostgreSQL,
-Redis, ClickHouse, a scoped database gateway and Grafana. This is a test environment, not a production
+Redis, ClickHouse, a scoped database gateway, a web proxy and Grafana. This is a test environment, not a production
 deployment template: no public endpoints, backups, TLS termination or mail setup.
 
 ```sh
@@ -107,9 +107,11 @@ an SSH tunnel, so loopback ports stay private on the Docker host. Log in as
 `admin` with `GRAFANA_ADMIN_PASSWORD` from your local `.env`. Use a different
 Portless name for each checkout; never take over someone else's route.
 
-The OpenPanel dashboard and API can use separate proxies with `OPG_SERVICE=dashboard`
-or `OPG_SERVICE=api`. To use the OpenPanel UI, set `API_URL` and `DASHBOARD_URL` in
-`.env` to those actual URLs, then recreate the app services. The automated test
+For the OpenPanel UI, run `OPG_SERVICE=web portless run --name "web.${DEV_NAMESPACE:-opg}" node scripts/proxy.mjs`.
+Set `DASHBOARD_URL` to the actual Portless URL, `API_URL` to that URL plus `/api`,
+and `CUSTOM_COOKIE_DOMAIN` to its hostname, then recreate the app services.
+This keeps browser authentication on one origin. `OPG_SERVICE=api` remains
+available for direct API testing. The automated test
 creates its own synthetic project directly in the isolated PostgreSQL database.
 
 Stop your proxy with Ctrl+C and run `pnpm demo:down` when finished. Named volumes

@@ -6,8 +6,8 @@ import { compose, context } from './docker.mjs';
 
 if (!process.env.PORT) throw new Error('Start through portless run; PORT must be assigned.');
 const service = process.env.OPG_SERVICE || 'grafana';
-if (!['grafana','api','dashboard'].includes(service)) throw new Error('Unknown OPG_SERVICE');
-const binding = compose(['port',service,'3000']).trim();
+if (!['grafana','api','dashboard','web'].includes(service)) throw new Error('Unknown OPG_SERVICE');
+const binding = compose(['port',service,service==='web'?'8080':'3000']).trim();
 const remotePort = Number(binding.split(':').at(-1));
 const info = spawnSync('docker',['--context',context,'context','inspect',context],{encoding:'utf8'});
 if (info.status !== 0) throw new Error('Cannot inspect Docker context.');
