@@ -101,7 +101,9 @@ services:
       retries: 30
     mem_limit: 1g
   dashboard:
-    image: lindesvard/openpanel-dashboard:2.3.0
+    build:
+      context: .
+      dockerfile: docker/openpanel-dashboard/Dockerfile
     environment: *app-env
     depends_on:
       api: {condition: service_healthy}
@@ -112,6 +114,12 @@ services:
       start_period: 30s
       retries: 30
     mem_limit: 768m
+  web:
+    build: docker/web
+    depends_on:
+      dashboard: {condition: service_healthy}
+    ports: ['127.0.0.1::8080']
+    mem_limit: 128m
   grafana:
     build:
       context: .

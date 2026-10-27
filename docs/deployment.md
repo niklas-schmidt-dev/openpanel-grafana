@@ -8,7 +8,8 @@ that inserts straight into ClickHouse. Grafana only reads; it is not the collect
    database. Do not point first-run migrations at a database containing unrelated
    tables: upstream migrations can rename existing tables during upgrades.
 2. Build the API with `docker/openpanel-api/Dockerfile` (pinned 2.3.0 plus
-   the verified fixes), and use upstream 2.3.0 worker/dashboard images, plus
+   the verified fixes), build the dashboard with
+   `docker/openpanel-dashboard/Dockerfile`, and use the upstream 2.3.0 worker, plus
    PostgreSQL and Redis with persistent volumes. Redis needs expired-key events
    (`notify-keyspace-events Ex`) and the `noeviction` policy.
 3. Set `SELF_HOSTED=true`, `NODE_ENV=production`, `DATABASE_URL`,
@@ -20,7 +21,15 @@ that inserts straight into ClickHouse. Grafana only reads; it is not the collect
    `CI=true pnpm -r run migrate:deploy`. A migration failure must stop startup.
    The migration/app user needs OpenPanel's schema privileges; the Grafana reader
    does not. Do not reuse an insert-only telemetry user for these migrations.
-5. Publish only the OpenPanel HTTP frontend/API through HTTPS with the paths
+5. For platforms with separate service domains, deploy `docker/web` in front of
+   the dashboard and API. Set its `API_UPSTREAM` and `DASHBOARD_UPSTREAM` to their
+   private hostnames and ports. This uses [Caddy path routing](https://caddyserver.com/docs/caddyfile/directives/handle_path/)
+   to serve the API at `/api` and the frontend at `/` on one HTTPS origin.
+   Set `API_URL=https://your-web-host/api`, `DASHBOARD_URL=https://your-web-host`,
+   and `CUSTOM_COOKIE_DOMAIN=your-web-host` on the API and dashboard. Do not use
+   shared cookies across unrelated platform domains such as `up.railway.app`.
+   Set `API_URL_SSR=http://your-private-api:3000` on the dashboard for internal SSR.
+   Publish only the OpenPanel HTTP frontend/API through HTTPS with the paths
    configured in `API_URL` and `DASHBOARD_URL`. Keep ClickHouse, PostgreSQL and
    Redis private. Add backups, retention, monitoring and resource limits before
    receiving real data. Disable open registration after the initial account.

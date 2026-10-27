@@ -1,0 +1,13 @@
+{
+  auto_https off
+  admin off
+}
+:{$PORT:8080} {
+  header Link "<https://github.com/niklas-schmidt-dev/openpanel-grafana/tree/main/docker/openpanel-dashboard>; rel=source"
+  handle_path /api/* {
+    reverse_proxy {$API_UPSTREAM:api:3000}
+  }
+  handle {
+    reverse_proxy {$DASHBOARD_UPSTREAM:dashboard:3000}
+  }
+}

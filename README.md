@@ -139,9 +139,9 @@ for the checks completed on the initial release.
 
 ## License and upstream
 
-The dashboards, gateway and tooling are MIT licensed. The OpenPanel patches in `docker/openpanel-api` are AGPL-3.0-only. OpenPanel is a
+The dashboards, gateway and tooling are MIT licensed. The OpenPanel patches in `docker/openpanel-api` and `docker/openpanel-dashboard` are AGPL-3.0-only. OpenPanel is a
 separate upstream project with its own [AGPL-3.0 license](https://github.com/Openpanel-dev/openpanel/blob/v2.3.0/LICENSE.md).
-Its full source is not vendored here. The demo builds a patched API from a pinned official image and pulls the official worker/dashboard images;
+Its full source is not vendored here. The demo builds a patched API and dashboard from pinned official images and pulls the official worker image;
 review upstream licensing before modifying or redistributing them. Grafana and
 the ClickHouse plugin retain their respective upstream licenses.
 
