@@ -19,7 +19,9 @@ const server = http.createServer(async (request,response) => {
   const supplied=createHash('sha256').update(request.headers.authorization || '').digest();
   if (!timingSafeEqual(expected,supplied)) return fail(response,401,'Unauthorized');
   if (!['GET','POST'].includes(request.method) || request.url.length > 8192) return fail(response,400,'Unsupported request');
-  const incoming = new URL(request.url, 'http://gateway');
+  let incoming;
+  try {incoming = new URL(request.url, 'http://gateway');}
+  catch {return fail(response,400,'Invalid URL');}
   if (!['/','/ping'].includes(incoming.pathname)) return fail(response,404,'Not found');
   if (incoming.searchParams.has('database') && incoming.searchParams.get('database') !== database) return fail(response,403,'Database not permitted');
   if (active >= 8) return fail(response,429,'Too many concurrent requests');

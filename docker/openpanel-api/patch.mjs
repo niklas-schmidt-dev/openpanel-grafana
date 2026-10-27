@@ -18,6 +18,16 @@ source = source.replace(early, '').replace(anchor, `
 \t\treq$2.clientSecretAuth = true;
 \t}
 ${anchor}`);
+const sourceAnchor = '\tfastify.setValidatorCompiler(validatorCompiler);';
+if (source.split(sourceAnchor).length !== 2) throw new Error('Source notice anchor is not unique.');
+source = source.replace(sourceAnchor, `${sourceAnchor}
+\tconst sourceUrl = 'https://github.com/niklas-schmidt-dev/openpanel-grafana/tree/main/docker/openpanel-api';
+\tfastify.addHook('onSend', async (_request, reply, payload) => {
+\t\treply.header('Link', '<' + sourceUrl + '>; rel="source"');
+\t\treturn payload;
+\t});
+\tfastify.get('/source', async (_request, reply) => reply.type('text/html').send('<!doctype html><title>OpenPanel source</title><h1>OpenPanel source</h1><p>This instance runs OpenPanel 2.3.0 with published fixes under AGPL-3.0-only.</p><p><a href="' + sourceUrl + '">Download the changes, complete upstream source and build instructions</a></p>'));
+`);
 writeFileSync(filename, source);
 console.log('Applied pinned OpenPanel client-secret verification patch.');
 

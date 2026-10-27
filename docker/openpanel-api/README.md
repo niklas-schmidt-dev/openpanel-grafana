@@ -24,7 +24,10 @@ The modification is completely described by `patch.mjs`. `Dockerfile` rebuilds
 the patched image from the exact official image. Users of a deployed modified
 instance must be offered access to this corresponding source and upstream source
 as required by the upstream license. Keep this source link in the deployment's
-documentation. Do not remove upstream notices.
+documentation. The patched API also serves a public `/source` page and includes
+a `Link` header pointing to these sources in every response. Do not remove
+upstream notices. If you distribute further changes, update both links to your
+own complete corresponding source.
 
 After upgrading upstream, verify the fix there and remove this patch when the
 same regression tests pass against the official image. Do not loosen the hash
